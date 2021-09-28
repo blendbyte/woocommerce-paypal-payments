@@ -20,6 +20,11 @@ class DccApplies {
 	 * @var array
 	 */
 	private $allowed_country_currency_matrix = array(
+		'HK' => array(
+			'JPY',
+			'USD',
+			'EUR',
+		),
 		'AU' => array(
 			'AUD',
 			'CAD',
@@ -145,6 +150,11 @@ class DccApplies {
 	 * @var array
 	 */
 	private $country_card_matrix = array(
+		'HK' => array(
+			'mastercard' => array(),
+			'visa'       => array(),
+			'amex'       => array( 'USD', 'EUR'),
+		),
 		'AU' => array(
 			'mastercard' => array(),
 			'visa'       => array(),
