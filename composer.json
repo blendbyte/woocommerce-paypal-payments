@@ -51,5 +51,10 @@
                 "vendor/bin/phpcbf"
             ]
         }
+    },
+"config": {
+    "platform": {
+        "php": "7.4"
     }
+}
 }
