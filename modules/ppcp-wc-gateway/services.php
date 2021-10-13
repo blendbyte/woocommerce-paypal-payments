@@ -53,6 +53,7 @@ return array(
 		$transaction_url_provider = $container->get( 'wcgateway.transaction-url-provider' );
 		$subscription_helper = $container->get( 'subscription.helper' );
 		$page_id             = $container->get( 'wcgateway.current-ppcp-settings-page-id' );
+		$environment         = $container->get( 'onboarding.environment' );
 		return new PayPalGateway(
 			$settings_renderer,
 			$order_processor,
@@ -64,7 +65,8 @@ return array(
 			$state,
 			$transaction_url_provider,
 			$subscription_helper,
-			$page_id
+			$page_id,
+			$environment
 		);
 	},
 	'wcgateway.credit-card-gateway'                => static function ( $container ): CreditCardGateway {
@@ -83,7 +85,8 @@ return array(
 		$payer_factory = $container->get( 'api.factory.payer' );
 		$order_endpoint = $container->get( 'api.endpoint.order' );
 		$subscription_helper = $container->get( 'subscription.helper' );
-		$logger                        = $container->get( 'woocommerce.logger.woocommerce' );
+		$logger = $container->get( 'woocommerce.logger.woocommerce' );
+		$environment = $container->get( 'onboarding.environment' );
 		return new CreditCardGateway(
 			$settings_renderer,
 			$order_processor,
@@ -100,7 +103,8 @@ return array(
 			$payer_factory,
 			$order_endpoint,
 			$subscription_helper,
-			$logger
+			$logger,
+			$environment
 		);
 	},
 	'wcgateway.disabler'                           => static function ( $container ): DisableGateways {
@@ -209,25 +213,28 @@ return array(
 			$authorized_payments_processor,
 			$settings,
 			$logger,
-			$environment->current_environment_is( Environment::SANDBOX )
+			$environment
 		);
 	},
 	'wcgateway.processor.refunds'                  => static function ( $container ): RefundProcessor {
 		$order_endpoint    = $container->get( 'api.endpoint.order' );
 		$payments_endpoint    = $container->get( 'api.endpoint.payments' );
-		return new RefundProcessor( $order_endpoint, $payments_endpoint );
+		$logger                        = $container->get( 'woocommerce.logger.woocommerce' );
+		return new RefundProcessor( $order_endpoint, $payments_endpoint, $logger );
 	},
 	'wcgateway.processor.authorized-payments'      => static function ( $container ): AuthorizedPaymentsProcessor {
 		$order_endpoint    = $container->get( 'api.endpoint.order' );
 		$payments_endpoint = $container->get( 'api.endpoint.payments' );
-		return new AuthorizedPaymentsProcessor( $order_endpoint, $payments_endpoint );
+		$logger = $container->get( 'woocommerce.logger.woocommerce' );
+		return new AuthorizedPaymentsProcessor( $order_endpoint, $payments_endpoint, $logger );
 	},
 	'wcgateway.admin.render-authorize-action'      => static function ( $container ): RenderAuthorizeAction {
 
 		return new RenderAuthorizeAction();
 	},
 	'wcgateway.admin.order-payment-status'         => static function ( $container ): PaymentStatusOrderDetail {
-		return new PaymentStatusOrderDetail();
+		$column = $container->get( 'wcgateway.admin.orders-payment-status-column' );
+		return new PaymentStatusOrderDetail( $column );
 	},
 	'wcgateway.admin.orders-payment-status-column' => static function ( $container ): OrderTablePaymentStatusColumn {
 		$settings = $container->get( 'wcgateway.settings' );
