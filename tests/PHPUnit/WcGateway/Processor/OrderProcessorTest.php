@@ -9,7 +9,7 @@ use Psr\Log\LoggerInterface;
 use WooCommerce\PayPalCommerce\ApiClient\Endpoint\OrderEndpoint;
 use WooCommerce\PayPalCommerce\ApiClient\Entity\Authorization;
 use WooCommerce\PayPalCommerce\ApiClient\Entity\AuthorizationStatus;
-use Woocommerce\PayPalCommerce\ApiClient\Entity\Capture;
+use WooCommerce\PayPalCommerce\ApiClient\Entity\Capture;
 use WooCommerce\PayPalCommerce\ApiClient\Entity\CaptureStatus;
 use WooCommerce\PayPalCommerce\ApiClient\Entity\Order;
 use WooCommerce\PayPalCommerce\ApiClient\Entity\OrderStatus;
@@ -147,7 +147,7 @@ class OrderProcessorTest extends TestCase
         $wcOrder
             ->expects('update_meta_data')
             ->with(
-                PayPalGateway::CAPTURED_META_KEY,
+                AuthorizedPaymentsProcessor::CAPTURED_META_KEY,
                 'false'
             );
         $wcOrder
@@ -159,7 +159,8 @@ class OrderProcessorTest extends TestCase
         $wcOrder
             ->expects('update_status')
             ->with('on-hold', 'Awaiting payment.');
-
+		$wcOrder->expects('set_transaction_id')
+			->with($transactionId);
 
         $this->assertTrue($testee->process($wcOrder));
     }
