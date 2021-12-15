@@ -24,6 +24,7 @@ use WooCommerce\PayPalCommerce\WcGateway\Admin\RenderAuthorizeAction;
 use WooCommerce\PayPalCommerce\WcGateway\Checkout\CheckoutPayPalAddressPreset;
 use WooCommerce\PayPalCommerce\WcGateway\Checkout\DisableGateways;
 use WooCommerce\PayPalCommerce\WcGateway\Endpoint\ReturnUrlEndpoint;
+use WooCommerce\PayPalCommerce\WcGateway\FundingSource\FundingSourceRenderer;
 use WooCommerce\PayPalCommerce\WcGateway\Gateway\CreditCardGateway;
 use WooCommerce\PayPalCommerce\WcGateway\Gateway\PayPalGateway;
 use WooCommerce\PayPalCommerce\WcGateway\Gateway\TransactionUrlProvider;
@@ -45,6 +46,7 @@ return array(
 	'wcgateway.paypal-gateway'                     => static function ( ContainerInterface $container ): PayPalGateway {
 		$order_processor     = $container->get( 'wcgateway.order-processor' );
 		$settings_renderer   = $container->get( 'wcgateway.settings.render' );
+		$funding_source_renderer   = $container->get( 'wcgateway.funding-source.renderer' );
 		$authorized_payments = $container->get( 'wcgateway.processor.authorized-payments' );
 		$settings            = $container->get( 'wcgateway.settings' );
 		$session_handler     = $container->get( 'session.handler' );
@@ -60,6 +62,7 @@ return array(
 		$logger              = $container->get( 'woocommerce.logger.woocommerce' );
 		return new PayPalGateway(
 			$settings_renderer,
+			$funding_source_renderer,
 			$order_processor,
 			$authorized_payments,
 			$settings,
@@ -680,17 +683,19 @@ return array(
 					'woocommerce-paypal-payments'
 				),
 				'options'      => array(
-					'card'       => _x( 'Credit or debit cards', 'Name of payment method', 'woocommerce-paypal-payments' ),
-					'credit'     => _x( 'Pay Later', 'Name of payment method', 'woocommerce-paypal-payments' ),
-					'sepa'       => _x( 'SEPA-Lastschrift', 'Name of payment method', 'woocommerce-paypal-payments' ),
-					'bancontact' => _x( 'Bancontact', 'Name of payment method', 'woocommerce-paypal-payments' ),
-					'eps'        => _x( 'eps', 'Name of payment method', 'woocommerce-paypal-payments' ),
-					'giropay'    => _x( 'giropay', 'Name of payment method', 'woocommerce-paypal-payments' ),
-					'ideal'      => _x( 'iDEAL', 'Name of payment method', 'woocommerce-paypal-payments' ),
-					'mybank'     => _x( 'MyBank', 'Name of payment method', 'woocommerce-paypal-payments' ),
-					'p24'        => _x( 'Przelewy24', 'Name of payment method', 'woocommerce-paypal-payments' ),
-					'sofort'     => _x( 'Sofort', 'Name of payment method', 'woocommerce-paypal-payments' ),
-					'venmo'      => _x( 'Venmo', 'Name of payment method', 'woocommerce-paypal-payments' ),
+					'card'        => _x( 'Credit or debit cards', 'Name of payment method', 'woocommerce-paypal-payments' ),
+					'credit'      => _x( 'Pay Later', 'Name of payment method', 'woocommerce-paypal-payments' ),
+					'sepa'        => _x( 'SEPA-Lastschrift', 'Name of payment method', 'woocommerce-paypal-payments' ),
+					'bancontact'  => _x( 'Bancontact', 'Name of payment method', 'woocommerce-paypal-payments' ),
+					'blik'        => _x( 'BLIK', 'Name of payment method', 'woocommerce-paypal-payments' ),
+					'eps'         => _x( 'eps', 'Name of payment method', 'woocommerce-paypal-payments' ),
+					'giropay'     => _x( 'giropay', 'Name of payment method', 'woocommerce-paypal-payments' ),
+					'ideal'       => _x( 'iDEAL', 'Name of payment method', 'woocommerce-paypal-payments' ),
+					'mercadopago' => _x( 'Mercado Pago', 'Name of payment method', 'woocommerce-paypal-payments' ),
+					'mybank'      => _x( 'MyBank', 'Name of payment method', 'woocommerce-paypal-payments' ),
+					'p24'         => _x( 'Przelewy24', 'Name of payment method', 'woocommerce-paypal-payments' ),
+					'sofort'      => _x( 'Sofort', 'Name of payment method', 'woocommerce-paypal-payments' ),
+					'venmo'       => _x( 'Venmo', 'Name of payment method', 'woocommerce-paypal-payments' ),
 				),
 				'screens'      => array(
 					State::STATE_PROGRESSIVE,
@@ -735,22 +740,26 @@ return array(
 				'gateway'      => 'paypal',
 			),
 			'prefix'                         => array(
-				'title'        => __( 'Invoice prefix', 'woocommerce-paypal-payments' ),
-				'type'         => 'text',
-				'desc_tip'     => true,
-				'description'  => __( 'If you use your PayPal account with more than one installation, please use a distinct prefix to separate those installations. Please do not use numbers in your prefix.', 'woocommerce-paypal-payments' ),
-				'default'      => ( static function (): string {
+				'title'             => __( 'Invoice prefix', 'woocommerce-paypal-payments' ),
+				'type'              => 'text',
+				'desc_tip'          => true,
+				'description'       => __( 'If you use your PayPal account with more than one installation, please use a distinct prefix to separate those installations. Please use only English letters and "-", "_" characters.', 'woocommerce-paypal-payments' ),
+				'maxlength'         => 15,
+				'custom_attributes' => array(
+					'pattern' => '[a-zA-Z_-]+',
+				),
+				'default'           => ( static function (): string {
 					$site_url = get_site_url( get_current_blog_id() );
 					$hash = md5( $site_url );
 					$letters = preg_replace( '~\d~', '', $hash );
 					return substr( $letters, 0, 6 ) . '-';
 				} )(),
-				'screens'      => array(
+				'screens'           => array(
 					State::STATE_PROGRESSIVE,
 					State::STATE_ONBOARDED,
 				),
-				'requirements' => array(),
-				'gateway'      => 'paypal',
+				'requirements'      => array(),
+				'gateway'           => 'paypal',
 			),
 
 			// General button styles.
@@ -1905,7 +1914,7 @@ return array(
 				),
 				'class'        => array(),
 				'input_class'  => array( 'wc-enhanced-select' ),
-				'default'      => 'SCA_WHEN_REQUIRED',
+				'default'      => $container->get( 'api.shop.is-psd2-country' ) ? '3D_SECURE' : 'NO_3D_SECURE',
 				'desc_tip'     => true,
 				'options'      => array(
 					'NO_3D_SECURE'      => __( 'No 3D Secure (transaction will be denied if 3D Secure is required)', 'woocommerce-paypal-payments' ),
@@ -2024,6 +2033,14 @@ return array(
 	},
 
 	'button.helper.messages-disclaimers'           => static function ( ContainerInterface $container ): MessagesDisclaimers {
-		return new MessagesDisclaimers();
+		return new MessagesDisclaimers(
+			$container->get( 'api.shop.country' )
+		);
+	},
+
+	'wcgateway.funding-source.renderer'            => function ( ContainerInterface $container ) : FundingSourceRenderer {
+		return new FundingSourceRenderer(
+			$container->get( 'wcgateway.settings' )
+		);
 	},
 );
