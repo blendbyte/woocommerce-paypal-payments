@@ -499,6 +499,11 @@ return array(
 				'SGD',
 				'USD',
 			),
+			'HK' => array(
+				'JPY',
+				'USD',
+				'EUR',
+			),
 		);
 	},
 
@@ -542,6 +547,11 @@ return array(
 				'visa'       => array(),
 				'amex'       => array( 'CAD' ),
 				'jcb'        => array( 'CAD' ),
+			),
+			'HK' => array(
+				'mastercard' => array(),
+				'visa'       => array(),
+				'amex'       => array( 'USD', 'EUR'),
 			),
 		);
 	},
