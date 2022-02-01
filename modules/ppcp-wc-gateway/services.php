@@ -120,8 +120,7 @@ return array(
 	'wcgateway.disabler'                           => static function ( ContainerInterface $container ): DisableGateways {
 		$session_handler = $container->get( 'session.handler' );
 		$settings       = $container->get( 'wcgateway.settings' );
-		$subscription_helper = $container->get( 'subscription.helper' );
-		return new DisableGateways( $session_handler, $settings, $subscription_helper );
+		return new DisableGateways( $session_handler, $settings );
 	},
 	'wcgateway.is-wc-payments-page'                => static function ( ContainerInterface $container ): bool {
 		$page = isset( $_GET['page'] ) ? sanitize_text_field( wp_unslash( $_GET['page'] ) ) : '';
@@ -729,7 +728,8 @@ return array(
 				'title'        => __( 'Logging', 'woocommerce-paypal-payments' ),
 				'type'         => 'checkbox',
 				'desc_tip'     => true,
-				'label'        => __( 'Enable logging', 'woocommerce-paypal-payments' ),
+				'label'        => __( 'Enable logging. ', 'woocommerce-paypal-payments' ) .
+					' <a href="' . admin_url( 'admin.php?page=wc-status&tab=logs' ) . '">' . __( 'View logs', 'woocommerce-paypal-payments' ) . '</a>',
 				'description'  => __( 'Enable logging of unexpected behavior. This can also log private data and should only be enabled in a development or stage environment.', 'woocommerce-paypal-payments' ),
 				'default'      => false,
 				'screens'      => array(
@@ -1987,7 +1987,7 @@ return array(
 	'wcgateway.url'                                => static function ( ContainerInterface $container ): string {
 		return plugins_url(
 			$container->get( 'wcgateway.relative-path' ),
-			dirname( __FILE__, 3 ) . '/woocommerce-paypal-payments.php'
+			dirname( realpath( __FILE__ ), 3 ) . '/woocommerce-paypal-payments.php'
 		);
 	},
 	'wcgateway.relative-path'                      => static function( ContainerInterface $container ): string {
@@ -1995,7 +1995,7 @@ return array(
 	},
 	'wcgateway.absolute-path'                      => static function( ContainerInterface $container ): string {
 		return plugin_dir_path(
-			dirname( __FILE__, 3 ) . '/woocommerce-paypal-payments.php'
+			dirname( realpath( __FILE__ ), 3 ) . '/woocommerce-paypal-payments.php'
 		) .
 			$container->get( 'wcgateway.relative-path' );
 	},
